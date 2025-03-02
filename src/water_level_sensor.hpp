@@ -12,9 +12,9 @@ public:
     high_(Bounce2::Button())
   {}
 
-  bool setup() {
+  void setup() {
     low_.attach(pin_l_, INPUT_PULLUP);
-    low_.interval(0);
+    low_.interval(2000);
     low_.setPressedState(LOW);
 
     high_.attach(pin_h_, INPUT_PULLUP);
