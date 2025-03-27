@@ -24,6 +24,7 @@ constexpr int PUMP_PIN              =10;
 
 /********************************** GLOBAL ***************************************/
 constexpr unsigned long SOLENOID_DELAY        = 1;
+constexpr unsigned long SWITCHING_BACK_DELAY  = 1;
 constexpr unsigned long PUMP_ABORT_TIME       = 15; // TODO 15
 constexpr int POT_MAX_VAL                     = 250;
 constexpr unsigned long SEC_IN_MIN            = 60; // TODO 60
@@ -137,10 +138,13 @@ void loop()
     case 3:
     {
       if (water_level_sensor.high_in_water()) {
-        relay.setPump(Relay::OFF);
         relay.set3WayValve(Relay::ThreeWayValveMode::DRAINAGE);
-        relay.setSolenoid(Relay::ON);
-        step = 4;
+        timeLeft = wait_for(SWITCHING_BACK_DELAY);
+        if (timeLeft <= 0) {
+          relay.setPump(Relay::OFF);
+          relay.setSolenoid(Relay::ON);
+          step = 4;
+        }
       }
       break;
     }
