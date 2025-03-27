@@ -23,7 +23,7 @@ constexpr int THREE_WAY_VALVE_PIN   =11;
 constexpr int PUMP_PIN              =10;
 
 /********************************** GLOBAL ***************************************/
-constexpr unsigned long SOLENOID_DELAY        = 2;
+constexpr unsigned long SOLENOID_DELAY        = 1;
 constexpr unsigned long PUMP_ABORT_TIME       = 15; // TODO 15
 constexpr int POT_MAX_VAL                     = 250;
 constexpr unsigned long SEC_IN_MIN            = 60; // TODO 60
