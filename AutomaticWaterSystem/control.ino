@@ -16,11 +16,8 @@ void processButtonState()
           relay.setPump(Relay::ON);
           return;
         }
-        case ButtonState::NOTHING:
-        {
-          drainageDelay = map(potentiometerValue, 0, POT_MAX_VAL, 5, 60);
+        default:
           return;
-        }
       }
     
     case SettingsMode::RUN_PUMP:
@@ -50,12 +47,8 @@ void processButtonState()
           settingsMode = SettingsMode::ADJUST_RTC_MODULE_H;
           return;
         }
-        case ButtonState::NOTHING:
-        {
-          long val = map(potentiometerValue, 0, POT_MAX_VAL, 0, 24);
-          rtcTriggerTime = DateTime(2025, 2, 24, val);
+        default:
           return;
-        }
       }
 
     case SettingsMode::ADJUST_RTC_MODULE_H:
@@ -66,12 +59,6 @@ void processButtonState()
         case ButtonState::SHORT:
         {
           settingsMode = SettingsMode::ADJUST_RTC_MODULE_M;
-          return;
-        }
-        case ButtonState::NOTHING:
-        {
-          long val = map(potentiometerValue, 0, POT_MAX_VAL, 0, 24);
-          newTime = DateTime(2025, 2, 24, val);
           return;
         }
         default:
@@ -88,12 +75,6 @@ void processButtonState()
         {
           settingsMode = SettingsMode::SET_RTC_TRIGGER_TIME;
           rtc.adjust(newTime);
-          return;
-        }
-        case ButtonState::NOTHING:
-        {
-          long val = map(potentiometerValue, 0, POT_MAX_VAL, 0, 60);
-          newTime = DateTime(2025, 2, 24, newTime.hour(), val);
           return;
         }
         default:

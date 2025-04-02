@@ -2,61 +2,27 @@
 #include "Bounce2.h"
 #include "elapsedMillis.h"
 #include "RTClib.h"
+#include "MagicPot.h"
 
 #include "relay.hpp"
 #include "water_level_sensor.hpp"
+#include "conf.hpp"
+#include "non_blocking_delay.hpp"
 
-/********************************** PINOUT ***************************************/
-constexpr int SHIFT_PIN_DS          =2;   /* Data input PIN */
-constexpr int SHIFT_PIN_STCP        =3;   /* Shift Register Storage PIN */
-constexpr int SHIFT_PIN_SHCP        =4;   /* Shift Register Shift PIN */
 
-constexpr int POTENTIOMETER_PIN     =0;   
-constexpr int CONTROL_PIN           =9;   
-constexpr int CONTROL_LED           =13;  
 
-constexpr int WATER_LEVEL_L_PIN     =7;
-constexpr int WATER_LEVEL_H_PIN     =8;
-
-constexpr int SOLENOID_PIN          =12;
-constexpr int THREE_WAY_VALVE_PIN   =11;
-constexpr int PUMP_PIN              =10;
-
-/********************************** GLOBAL ***************************************/
-constexpr unsigned long SOLENOID_DELAY        = 1;
-constexpr unsigned long SWITCHING_BACK_DELAY  = 1;
-constexpr unsigned long PUMP_ABORT_TIME       = 15; // TODO 15
-constexpr int POT_MAX_VAL                     = 250;
-constexpr unsigned long SEC_IN_MIN            = 60; // TODO 60
-
-enum class SettingsMode
-{
-  SET_DRAINAGE_DELAY,
-  SET_RTC_TRIGGER_TIME,
-  ADJUST_RTC_MODULE_H,
-  ADJUST_RTC_MODULE_M,
-  RUN_PUMP,
-  OFF,
-} settingsMode;
-
-enum class ButtonState
-{
-  SHORT,
-  LONG,
-  NOTHING,
-} buttonState;
-
-enum class ErrorCode
-{
-  H_IN_WATER_L_NOT_IN_WATER,
-  PUMP_TIMEOUT,
-} errorCode;
+SettingsMode settingsMode = SettingsMode::SET_RTC_TRIGGER_TIME;
+ButtonState buttonState = ButtonState::NOTHING;
+ErrorCode errorCode = ErrorCode::NONE;
 
 int step = 0;
 int timeLeft = 10;
 unsigned int drainageDelay = 30;
+bool updateDrainageDelay = false;
+
 DateTime rtcTriggerTime(2025, 2, 24, 2);
 DateTime newTime(2025, 2, 24);
+
 
 
 long potentiometerValue = map(drainageDelay, 0, 60, 0, 255);
@@ -67,11 +33,49 @@ SevSegShift sevseg(SHIFT_PIN_DS, SHIFT_PIN_SHCP, SHIFT_PIN_STCP);
 RTC_DS1307 rtc;
 Relay relay(PUMP_PIN, THREE_WAY_VALVE_PIN, SOLENOID_PIN);
 WaterLevelSensor water_level_sensor(WATER_LEVEL_L_PIN, WATER_LEVEL_H_PIN);
+MagicPot potentiometer(POTENTIOMETER_PIN);
+NonBlockingDelay timer;
 
 /********************************** SETUP **********************************/
 void setup() 
 {
-  mySetup();
+  Serial.begin(9600);
+
+  settingsMode = SettingsMode::SET_DRAINAGE_DELAY;
+  potentiometerValue = analogRead(POTENTIOMETER_PIN) >> 2;
+
+  // Start RTC
+  if (! rtc.begin()) {
+    Serial.println("Couldn't find RTC");
+    Serial.flush();
+    // abort();
+  }
+
+  // Setup Seven Segment display
+  byte numDigits = 4;
+  byte digitPins[] = {8+2, 8+5, 8+6, 2}; // of ShiftRegister(s) | 8+x (2nd Register)
+  byte segmentPins[] = {8+3, 8+7, 4, 6, 7, 8+4, 3,  5}; // of Shiftregister(s) | 8+x (2nd Register)
+  bool resistorsOnSegments = true; // 'false' means resistors are on digit pins
+  byte hardwareConfig = COMMON_ANODE; // See README.md for options
+  bool updateWithDelays = false; // Default 'false' is Recommended
+  bool leadingZeros = false; // Use 'true' if you'd like to keep the leading zeros
+  bool disableDecPoint = false; // Use 'true' if your decimal point doesn't exist or isn't connected. Then, you only need to specify 7 segmentPins[]
+  sevseg.begin(hardwareConfig, numDigits, digitPins, segmentPins, resistorsOnSegments, updateWithDelays, leadingZeros, disableDecPoint);
+
+  // Setup control button
+  button.attach(CONTROL_PIN, INPUT_PULLUP);
+  button.interval(10);
+  button.setPressedState(LOW);
+
+  pinMode(CONTROL_LED, OUTPUT);
+
+  water_level_sensor.setup();
+
+  relay.setup();
+
+  potentiometer.begin();
+  potentiometer.onChange(onPotentiometerChange);
+
 }
 
 /********************************** LOOP **********************************/
@@ -80,7 +84,7 @@ void loop()
   button.update();
   water_level_sensor.update();
   sevseg.refreshDisplay();
-  readPotentiometerValue();
+  potentiometer.read(POT_SENSITIVITY);
   if (rtc.isrunning())
     now = rtc.now();
 
@@ -128,7 +132,11 @@ void loop()
     }
     case 2:
     {
-      timeLeft = wait_for(drainageDelay);
+      if (updateDrainageDelay == true) {
+        timer.update_timer(drainageDelay * SEC_IN_MIN);
+        updateDrainageDelay = false;
+      }
+      timeLeft = timer.wait_for(drainageDelay * SEC_IN_MIN);
       if (timeLeft <= 0) {
         relay.set3WayValve(Relay::ThreeWayValveMode::TANK);
         step = 3;

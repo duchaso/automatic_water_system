@@ -19,22 +19,61 @@
 //   }
 // }
 
-void readPotentiometerValue()
-{
-  static long sum = 0;
-  static int cnt = 0;
-  static elapsedMillis controlReadTimeout;
+// void readPotentiometerValue()
+// {
+//   static long sum = 0;
+//   static int cnt = 0;
+//   static elapsedMillis controlReadTimeout;
   
-  if (cnt == 20) {
-    potentiometerValue = sum / cnt;
-    cnt = 0;
-    sum = 0;
-  }
+//   if (cnt == 20) {
+//     potentiometerValue = sum / cnt;
+//     cnt = 0;
+//     sum = 0;
+//   }
 
-  if (controlReadTimeout > 5) {
-    controlReadTimeout = 0;
-    sum += (analogRead(POTENTIOMETER_PIN) >> 2);
-    ++cnt;
+//   if (controlReadTimeout > 5) {
+//     controlReadTimeout = 0;
+//     sum += (analogRead(POTENTIOMETER_PIN) >> 2);
+//     ++cnt;
+//   }
+// }
+
+void onPotentiometerChange()
+{
+  if (step <= 0) {
+    if (buttonState == ButtonState::NOTHING) {
+      switch (settingsMode)
+      {
+        case SettingsMode::SET_DRAINAGE_DELAY:
+        {
+          drainageDelay = map(potentiometer.getRawValue(), 0, POT_MAX_VAL, 1, 60);
+          return;
+        }
+        case SettingsMode::SET_RTC_TRIGGER_TIME:
+        {
+          long val = map(potentiometer.getRawValue(), 0, POT_MAX_VAL, 0, 24);
+          rtcTriggerTime = DateTime(2025, 2, 24, val);
+          return;
+        }
+        case SettingsMode::ADJUST_RTC_MODULE_H:
+        {
+          long val = map(potentiometer.getRawValue(), 0, POT_MAX_VAL, 0, 24);
+          newTime = DateTime(2025, 2, 24, val);
+          return;
+        }
+        case SettingsMode::ADJUST_RTC_MODULE_M:
+        {
+          long val = map(potentiometer.getRawValue(), 0, POT_MAX_VAL, 0, 60);
+          newTime = DateTime(2025, 2, 24, newTime.hour(), val);
+          return;
+        }
+        default:
+          return;
+      }
+    }
+  } else if (step == 2) {
+    drainageDelay = map(potentiometer.getRawValue(), 0, POT_MAX_VAL, 1, 60);
+    updateDrainageDelay = true;
   }
 }
 
@@ -60,6 +99,8 @@ int wait_for(unsigned long minutes)
 
   return remainingMinutes;
 }
+
+
 
 void healthCheck()
 {
