@@ -2,13 +2,12 @@
 #include "Bounce2.h"
 #include "elapsedMillis.h"
 #include "RTClib.h"
-#include "MagicPot.h"
 
 #include "relay.hpp"
 #include "water_level_sensor.hpp"
 #include "conf.hpp"
 #include "non_blocking_delay.hpp"
-
+#include "control_pot.hpp"
 
 
 SettingsMode settingsMode = SettingsMode::SET_RTC_TRIGGER_TIME;
@@ -17,15 +16,11 @@ ErrorCode errorCode = ErrorCode::NONE;
 
 int step = 0;
 int timeLeft = 10;
-unsigned int drainageDelay = 30;
-bool updateDrainageDelay = false;
+unsigned int drainageDelay = DEFAULT_DRAINAGE_DELAY;
+bool updateDrainageDelay = true;
 
 DateTime rtcTriggerTime(2025, 2, 24, 2);
 DateTime newTime(2025, 2, 24);
-
-
-
-long potentiometerValue = map(drainageDelay, 0, 60, 0, 255);
 DateTime now{};
 
 Bounce2::Button button = Bounce2::Button();
@@ -33,7 +28,7 @@ SevSegShift sevseg(SHIFT_PIN_DS, SHIFT_PIN_SHCP, SHIFT_PIN_STCP);
 RTC_DS1307 rtc;
 Relay relay(PUMP_PIN, THREE_WAY_VALVE_PIN, SOLENOID_PIN);
 WaterLevelSensor water_level_sensor(WATER_LEVEL_L_PIN, WATER_LEVEL_H_PIN);
-MagicPot potentiometer(POTENTIOMETER_PIN);
+ControlPot pot{POTENTIOMETER_PIN, 8};
 NonBlockingDelay timer;
 
 /********************************** SETUP **********************************/

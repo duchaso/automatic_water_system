@@ -1,23 +1,25 @@
 #pragma once
+#include <Arduino.h>
 
 /********************************** PINOUT ***************************************/
-constexpr int SHIFT_PIN_DS          =2;   /* Data input PIN */
-constexpr int SHIFT_PIN_STCP        =3;   /* Shift Register Storage PIN */
-constexpr int SHIFT_PIN_SHCP        =4;   /* Shift Register Shift PIN */
+constexpr uint8_t SHIFT_PIN_DS          =2;   /* Data input PIN */
+constexpr uint8_t SHIFT_PIN_STCP        =3;   /* Shift Register Storage PIN */
+constexpr uint8_t SHIFT_PIN_SHCP        =4;   /* Shift Register Shift PIN */
 
-constexpr int POTENTIOMETER_PIN     =0;   
-constexpr int CONTROL_PIN           =9;   
-constexpr int CONTROL_LED           =13;  
+constexpr uint8_t POTENTIOMETER_PIN     =0;   
+constexpr uint8_t CONTROL_PIN           =9;   
+constexpr uint8_t CONTROL_LED           =13;  
 
-constexpr int WATER_LEVEL_L_PIN     =7;
-constexpr int WATER_LEVEL_H_PIN     =8;
+constexpr uint8_t WATER_LEVEL_L_PIN     =7;
+constexpr uint8_t WATER_LEVEL_H_PIN     =8;
 
-constexpr int SOLENOID_PIN          =12;
-constexpr int THREE_WAY_VALVE_PIN   =11;
-constexpr int PUMP_PIN              =10;
+constexpr uint8_t SOLENOID_PIN          =12;
+constexpr uint8_t THREE_WAY_VALVE_PIN   =11;
+constexpr uint8_t PUMP_PIN              =10;
 
 /********************************** GLOBAL ***************************************/
 constexpr unsigned long SOLENOID_DELAY        = 1;
+constexpr unsigned long DEFAULT_DRAINAGE_DELAY        = 30;
 constexpr unsigned long SWITCHING_BACK_DELAY  = 1;
 constexpr unsigned long PUMP_ABORT_TIME       = 15; // TODO 15
 constexpr int POT_MAX_VAL                     = 1023;
