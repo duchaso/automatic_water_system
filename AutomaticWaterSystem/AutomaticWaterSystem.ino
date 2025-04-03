@@ -9,6 +9,7 @@
 #include "non_blocking_delay.hpp"
 #include "control_pot.hpp"
 #include "control_button.hpp"
+#include "display.hpp"
 
 
 SettingsMode settingsMode = SettingsMode::SET_RTC_TRIGGER_TIME;
@@ -59,8 +60,6 @@ void setup()
 
   // Setup control button
   button.setup(INPUT_PULLUP, 10, LOW);  
-
-  pinMode(CONTROL_LED, OUTPUT);
 
   water_level_sensor.setup();
 
