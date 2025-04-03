@@ -96,17 +96,3 @@ void processButtonState()
   }
   
 }
-
-ButtonState getButtonState()
-{
-  if (button.released()) {
-    if (button.previousDuration() > 3000) {
-      // long press
-      return ButtonState::LONG;
-    } else {
-      // short press
-      return ButtonState::SHORT;
-    }
-  }
-  return ButtonState::NOTHING;
-}
