@@ -8,6 +8,7 @@
 #include "conf.hpp"
 #include "non_blocking_delay.hpp"
 #include "control_pot.hpp"
+#include "control_button.hpp"
 
 
 SettingsMode settingsMode = SettingsMode::SET_RTC_TRIGGER_TIME;
@@ -23,12 +24,12 @@ DateTime rtcTriggerTime(2025, 2, 24, 2);
 DateTime newTime(2025, 2, 24);
 DateTime now{};
 
-Bounce2::Button button = Bounce2::Button();
 SevSegShift sevseg(SHIFT_PIN_DS, SHIFT_PIN_SHCP, SHIFT_PIN_STCP); 
 RTC_DS1307 rtc;
 Relay relay(PUMP_PIN, THREE_WAY_VALVE_PIN, SOLENOID_PIN);
 WaterLevelSensor water_level_sensor(WATER_LEVEL_L_PIN, WATER_LEVEL_H_PIN);
 ControlPot pot{POTENTIOMETER_PIN, 8};
+ControlButton button{CONTROL_PIN};
 NonBlockingDelay timer;
 
 /********************************** SETUP **********************************/
@@ -37,7 +38,6 @@ void setup()
   Serial.begin(9600);
 
   settingsMode = SettingsMode::SET_DRAINAGE_DELAY;
-  potentiometerValue = analogRead(POTENTIOMETER_PIN) >> 2;
 
   // Start RTC
   if (! rtc.begin()) {
@@ -58,9 +58,7 @@ void setup()
   sevseg.begin(hardwareConfig, numDigits, digitPins, segmentPins, resistorsOnSegments, updateWithDelays, leadingZeros, disableDecPoint);
 
   // Setup control button
-  button.attach(CONTROL_PIN, INPUT_PULLUP);
-  button.interval(10);
-  button.setPressedState(LOW);
+  button.setup(INPUT_PULLUP, 10, LOW);  
 
   pinMode(CONTROL_LED, OUTPUT);
 
@@ -68,18 +66,16 @@ void setup()
 
   relay.setup();
 
-  potentiometer.begin();
-  potentiometer.onChange(onPotentiometerChange);
-
+  pot.setup();
 }
 
 /********************************** LOOP **********************************/
 void loop() 
 {
   button.update();
+  pot.update();
   water_level_sensor.update();
   sevseg.refreshDisplay();
-  potentiometer.read(POT_SENSITIVITY);
   if (rtc.isrunning())
     now = rtc.now();
 
@@ -104,7 +100,7 @@ void loop()
   #endif
 
   if (step <= 0) {
-    buttonState = getButtonState();
+    buttonState = button.value();
     processButtonState();
   }
 
