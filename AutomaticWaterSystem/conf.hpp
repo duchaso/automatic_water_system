@@ -1,6 +1,8 @@
 #pragma once
 #include <Arduino.h>
 
+#define ENABLE_RTC 0
+
 /********************************** PINOUT ***************************************/
 constexpr uint8_t SHIFT_PIN_DS          =2;   /* Data input PIN */
 constexpr uint8_t SHIFT_PIN_STCP        =3;   /* Shift Register Storage PIN */

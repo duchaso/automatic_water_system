@@ -5,11 +5,13 @@ void processButtonState()
     case SettingsMode::SET_DRAINAGE_DELAY:
       switch (buttonState)
       {
+        #if ENABLE_RTC
         case ButtonState::SHORT:
         {
           settingsMode = SettingsMode::SET_RTC_TRIGGER_TIME;
           return;
         }
+        #endif
         case ButtonState::LONG:
         {
           settingsMode = SettingsMode::RUN_PUMP;
@@ -33,6 +35,7 @@ void processButtonState()
           return;
       }
 
+    #if ENABLE_RTC
     case SettingsMode::SET_RTC_TRIGGER_TIME:
       switch (buttonState)
       {
@@ -81,6 +84,7 @@ void processButtonState()
           return;
       }
     }
+    #endif
 
     case SettingsMode::OFF:
       switch (buttonState) {

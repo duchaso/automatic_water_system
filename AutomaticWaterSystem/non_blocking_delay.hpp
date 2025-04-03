@@ -2,13 +2,10 @@
 #include "elapsedMillis.h"
 
 class NonBlockingDelay {
-private:
-    elapsedMillis timer;
-    unsigned long remainingSeconds = 0;
-
 public:
     // Start a new wait period or return remaining time
-    unsigned long wait_for(unsigned long seconds) {
+    unsigned long waitFor(unsigned long seconds) 
+    {
         if (remainingSeconds == 0) {
           remainingSeconds = seconds;
           timer = 0;  // Reset timer
@@ -22,9 +19,14 @@ public:
         return remainingSeconds;  // Return time left in seconds
     }
 
-    void update_timer(unsigned long seconds) {
+    void updateTimer(unsigned long seconds) 
+    {
         if (remainingSeconds > 0) {
           remainingSeconds = seconds;
         }
     }
+
+private:
+    elapsedMillis timer;
+    unsigned long remainingSeconds = 0;
 };
