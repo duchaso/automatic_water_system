@@ -10,6 +10,8 @@
 #include "control_button.hpp"
 #include "display.hpp"
 
+void healthCheck();
+void raiseAbort();
 
 SettingsMode settingsMode = SettingsMode::SET_RTC_TRIGGER_TIME;
 ButtonState buttonState = ButtonState::NOTHING;
@@ -104,7 +106,6 @@ void loop()
 
   if (step <= 0) {
     buttonState = button.value();
-    processButtonState();
   }
 
   switch (step) {
@@ -163,4 +164,32 @@ void loop()
       break;
     }
   }
+}
+
+void healthCheck()
+{
+  if (water_level_sensor.high_in_water() and !water_level_sensor.low_in_water())
+  {
+    errorCode = ErrorCode::H_IN_WATER_L_NOT_IN_WATER;
+    raiseAbort();
+    return;
+  }
+
+  if (relay.pumpFillingTankTime() > PUMP_ABORT_TIME * SEC_IN_MIN * 1000) 
+  {
+    errorCode = ErrorCode::PUMP_TIMEOUT;
+    raiseAbort();
+    return;
+  }
+}
+
+void raiseAbort()
+{
+  relay.setPump(Relay::OFF);
+  relay.set3WayValve(Relay::ThreeWayValveMode::DRAINAGE);
+  relay.setSolenoid(Relay::OFF);
+
+  settingsMode = SettingsMode::OFF;
+  step = -1;
+  sevseg.setText("off");
 }
