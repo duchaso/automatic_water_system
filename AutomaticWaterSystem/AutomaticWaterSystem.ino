@@ -17,7 +17,8 @@ SettingsMode settingsMode = SettingsMode::SET_RTC_TRIGGER_TIME;
 ButtonState buttonState = ButtonState::NOTHING;
 ErrorCode errorCode = ErrorCode::NONE;
 
-int step = 0;
+Step step = Step::IDLE;
+
 int timeLeft = 10;
 unsigned int drainageDelay = DEFAULT_DRAINAGE_DELAY;
 bool updateDrainageDelay = true;
@@ -104,62 +105,54 @@ void loop()
   }
   #endif
 
-  if (step <= 0) {
+  if (step == Step::IDLE) {
     buttonState = button.value();
   }
 
   switch (step) {
-    case 0:
+    case Step::IDLE:
     {
-      if (!water_level_sensor.low_in_water() 
+      if (!water_level_sensor.low_in_water()
       #if ENABLE_RTC
-        or ( rtc.isrunning() and (rtcTriggerTime.unixtime() == now.unixtime()) )
+        || (rtc.isrunning() && (rtcTriggerTime.unixtime() == now.unixtime()))
       #endif
       )
       {
-        step = 1;
+        step = Step::DRAINING;
       }
       break;
     }
-    case 1:
+    case Step::DRAINING:
     {
       relay.set3WayValve(Relay::ThreeWayValveMode::DRAINAGE);
       relay.setPump(Relay::ON);
-      step = 2;
-      break;
-    }
-    case 2:
-    {
-      if (updateDrainageDelay == true) {
-        timer.updateTimer(drainageDelay * SEC_IN_MIN);
-        updateDrainageDelay = false;
-      }
+
       timeLeft = timer.waitFor(drainageDelay * SEC_IN_MIN);
       if (timeLeft <= 0) {
-        relay.set3WayValve(Relay::ThreeWayValveMode::TANK);
-        step = 3;
+        step = Step::FILLING;
       }
       break;
     }
-    case 3:
+    case Step::FILLING:
     {
+      relay.set3WayValve(Relay::ThreeWayValveMode::TANK);
       if (water_level_sensor.high_in_water()) {
-        relay.set3WayValve(Relay::ThreeWayValveMode::DRAINAGE);
-        timeLeft = timer.waitFor(SWITCHING_BACK_DELAY);
-        if (timeLeft <= 0) {
-          relay.setPump(Relay::OFF);
-          relay.setSolenoid(Relay::ON);
-          step = 4;
-        }
+        step = Step::FINISHING;
       }
       break;
     }
-    case 4:
+    case Step::FINISHING:
     {
+      relay.set3WayValve(Relay::ThreeWayValveMode::DRAINAGE);
+      timeLeft = timer.waitFor(SWITCHING_BACK_DELAY);
+      if (timeLeft <= 0) {
+        relay.setPump(Relay::OFF);
+        relay.setSolenoid(Relay::ON);
+      }
       timeLeft = timer.waitFor(SOLENOID_DELAY);
       if (timeLeft <= 0) {
         relay.setSolenoid(Relay::OFF);
-        step = 0;
+        step = Step::IDLE;
       }
       break;
     }
@@ -190,6 +183,6 @@ void raiseAbort()
   relay.setSolenoid(Relay::OFF);
 
   settingsMode = SettingsMode::OFF;
-  step = -1;
+  step = Step::IDLE;
   sevseg.setText("off");
 }

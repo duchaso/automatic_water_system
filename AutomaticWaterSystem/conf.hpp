@@ -52,3 +52,11 @@ enum class ErrorCode
   PUMP_TIMEOUT,
   NONE,
 };
+
+enum class Step
+{
+  IDLE = 0,
+  DRAINING,
+  FILLING,
+  FINISHING,
+};
